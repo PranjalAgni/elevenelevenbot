@@ -1,0 +1,17 @@
+{
+  "name": "elevenelevenbot",
+  "version": "1.0.0",
+  "description": "Send WhatsApp messages at 11:11 AM/PM using Baileys",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "baileys": "^6.7.8",
+    "dotenv": "^16.4.5",
+    "node-cron": "^3.0.3",
+    "pino": "^9.3.2",
+    "qrcode-terminal": "^0.12.0"
+  }
+}
