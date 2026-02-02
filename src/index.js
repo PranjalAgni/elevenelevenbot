@@ -24,9 +24,22 @@ if (!TARGET_NUMBER) {
 
 const targetJid = `${TARGET_NUMBER}@s.whatsapp.net`;
 
+const formatTime12h = (date) => {
+  const hours24 = date.getHours();
+  const minutes = String(date.getMinutes()).padStart(2, "0");
+  const hours12 = ((hours24 + 11) % 12) + 1;
+  return `${hours12}:${minutes}`;
+};
+
+const buildMessageText = () => {
+  const timeStr = formatTime12h(new Date());
+  return MESSAGE_TEXT.replace(/\{time\}/g, timeStr);
+};
+
 const sendMessage = async (sock) => {
   try {
-    await sock.sendMessage(targetJid, { text: MESSAGE_TEXT });
+    const text = buildMessageText();
+    await sock.sendMessage(targetJid, { text });
     logger.info({ to: targetJid }, "Message sent");
   } catch (error) {
     logger.error({ error }, "Failed to send message");
