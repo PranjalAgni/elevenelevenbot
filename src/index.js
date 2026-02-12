@@ -16,6 +16,8 @@ const logger = pino({ level: process.env.LOG_LEVEL || "info" });
 const AUTH_DIR = process.env.AUTH_DIR || path.join(__dirname, "..", "auth_info");
 const TARGET_NUMBER = (process.env.TARGET_NUMBER || "").replace(/\D/g, "");
 const MESSAGE_TEXT = process.env.MESSAGE_TEXT || "11:11 time!";
+const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || "";
+const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID || "";
 
 if (!TARGET_NUMBER) {
   logger.error("Missing TARGET_NUMBER in .env (digits only).");
@@ -36,13 +38,49 @@ const buildMessageText = () => {
   return MESSAGE_TEXT.replace(/\{time\}/g, timeStr);
 };
 
-const sendMessage = async (sock) => {
+const sendTelegramNotification = async (text) => {
+  if (!TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID) {
+    return;
+  }
+
   try {
-    const text = buildMessageText();
+    const response = await fetch(
+      `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          chat_id: TELEGRAM_CHAT_ID,
+          text,
+        }),
+      }
+    );
+
+    if (!response.ok) {
+      const responseText = await response.text();
+      logger.warn(
+        { status: response.status, responseText },
+        "Failed to send Telegram notification"
+      );
+    }
+  } catch (error) {
+    logger.warn({ error }, "Failed to send Telegram notification");
+  }
+};
+
+const sendMessage = async (sock) => {
+  const text = buildMessageText();
+  try {
     await sock.sendMessage(targetJid, { text });
     logger.info({ to: targetJid }, "Message sent");
+    await sendTelegramNotification(
+      `✅ WhatsApp message sent to ${TARGET_NUMBER}:\n${text}`
+    );
   } catch (error) {
     logger.error({ error }, "Failed to send message");
+    await sendTelegramNotification(
+      `❌ WhatsApp message failed for ${TARGET_NUMBER}:\n${error?.message || "Unknown error"}`
+    );
   }
 };
 
